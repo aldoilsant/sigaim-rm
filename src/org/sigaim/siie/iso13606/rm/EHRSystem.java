@@ -8,6 +8,7 @@ public class EHRSystem {
 	protected List<EHRExtract> allEhrs;
 	protected List<SubjectOfCare> allSubjectsOfCare;
 	protected List<HealthcareFacility> allHealthcareFacilities;
+	protected List<Performer> allPerformers;
 	
 	public EHRSystem() {
 		
@@ -48,5 +49,11 @@ public class EHRSystem {
 	public void setAllHealthcareFacilities(
 			List<HealthcareFacility> allHealthcareFacilities) {
 		this.allHealthcareFacilities = allHealthcareFacilities;
+	}
+	public List<Performer> getAllPerformers() {
+		return allPerformers;
+	}
+	public void setAllPerformers(List<Performer> allPerformers) {
+		this.allPerformers = allPerformers;
 	}
 }

@@ -605,12 +605,12 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 									Class collectionClass=collection.getClass();
 									for(Method collectionMethod:collectionClass.getMethods()) {
 										String addMethodName=collectionMethod.getName();
-										if(addMethodName.equals("addAll")) {
+										if(addMethodName.equals("addAll") && collectionMethod.getParameterTypes().length==1) {
 											//Call add method
 											collectionMethod.invoke(collection, setterParameter);
 											found=true;
 											break;
-										} else if(addMethodName.equals("putAll")) {
+										} else if(addMethodName.equals("putAll") && collectionMethod.getParameterTypes().length==1) {
 											collectionMethod.invoke(collection, setterParameter);
 											found=true;
 											break;
