@@ -1,0 +1,7 @@
+<project name="SIGAIM Service Build" default="wsimport">
+    <target name="wsimport">
+        <exec executable="wsimport">
+            <arg line="-keep -s ./src -p org.sigaim.siie.interfaces.clients.intsiie001eql http://localhost:9999/IntSIIE001EQL?wsdl"/>
+        </exec>           
+    </target>
+</project>
