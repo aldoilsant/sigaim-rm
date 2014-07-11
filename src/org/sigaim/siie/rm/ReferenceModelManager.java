@@ -27,4 +27,6 @@ public interface ReferenceModelManager {
 	boolean isArchetypedClass(Class<?> tclass);
 	SingleAttributeObjectBlock getSingleAttributeObjectBlockFromContentObject(ContentObject obj) throws SemanticDADLException;
 	ObjectBlock unbindGeneric(Object obj) throws ReferenceModelException;
+	public List<String> getSubclassesOrSelf(String base);
+	public List<Class<?>> getSubclassesOrSelf(Class<?> base);
 }

@@ -382,8 +382,19 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 			return true;
 		} else return false;
 	}
-
-	private List<Class<?>> getSubclassesOrSelf(Class<?> base) {
+	@Override
+	public List<String> getSubclassesOrSelf(String base) {
+		base=Utils.toUppercaseNotation(base);
+		List<String> ret=new ArrayList<String>();
+		Class<?> theClass=this.referenceModelClassFromString(base);
+		List<Class<?>> subclassesOrSelf=this.getSubclassesOrSelf(theClass);
+		for(Class<?> subClass : subclassesOrSelf) {
+			ret.add(Utils.toUppercaseNotation(subClass.getSimpleName()));
+		}
+		return ret;
+	}
+	@Override
+	public List<Class<?>> getSubclassesOrSelf(Class<?> base) {
 		ArrayList<Class<?>> ret=new ArrayList<Class<?>>();
 		for(Class<?> rmClass : classesForString.values()) {
 			if(base.isAssignableFrom(rmClass)) {
