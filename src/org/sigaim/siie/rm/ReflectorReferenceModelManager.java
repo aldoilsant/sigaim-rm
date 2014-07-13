@@ -573,7 +573,8 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		}*/
 		return referenceModelClassName;
 	}
-	private Object bindSingleAttributeObjectBlock(SingleAttributeObjectBlock block)  throws SemanticDADLException, ReferenceModelException{
+	@Override
+	public Object bindSingleAttributeObjectBlock(SingleAttributeObjectBlock block)  throws SemanticDADLException, ReferenceModelException{
 		//Attempt to get the reference model class name
 		String referenceModelClassName=null;
 		try {

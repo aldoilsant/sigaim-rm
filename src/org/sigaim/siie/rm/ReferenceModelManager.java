@@ -29,4 +29,5 @@ public interface ReferenceModelManager {
 	ObjectBlock unbindGeneric(Object obj) throws ReferenceModelException;
 	public List<String> getSubclassesOrSelf(String base);
 	public List<Class<?>> getSubclassesOrSelf(Class<?> base);
+	public Object bindSingleAttributeObjectBlock(SingleAttributeObjectBlock block)  throws SemanticDADLException, ReferenceModelException;
 }
