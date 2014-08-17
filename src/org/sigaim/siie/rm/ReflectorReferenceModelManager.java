@@ -793,6 +793,9 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 			return this.unbindPrimitiveObject(obj);
 		}
 	}
+	public long millisecondsFromInterval(long start, long end) {
+		return (end-start)/(1000*1000);
+	}
 	private SingleAttributeObjectBlock unbindObject(Object object) {
 		//Iterate all getters. If it is a primitive create a primitive, if it is a collection
 		//create a keyed object, and if not create another single attribute object
@@ -804,7 +807,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 					)
 			);
 			//This way we ignore Object class properties
-			PropertyDescriptor[] descriptors=Introspector.getBeanInfo(object.getClass(),Object.class).getPropertyDescriptors();
+			PropertyDescriptor[] descriptors=Introspector.getBeanInfo(object.getClass()).getPropertyDescriptors();
 			for(PropertyDescriptor descriptor : descriptors) {
 				Method readMethod=descriptor.getReadMethod();
 				if(readMethod==null) { //Hackfix for wrong isXXX Boolean properties
@@ -817,7 +820,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 						}
 					}
 				}
-				if(readMethod!=null) {
+				if(readMethod!=null && !readMethod.getName().equals("getClass")) { //Hackfix for slow introspector
 					//Invoke the reader 
 					Object propertyObject=readMethod.invoke(object);
 					ObjectBlock unbinded;

@@ -34,92 +34,104 @@ public class OpenEHRDADLManager implements DADLManager {
 			return null;
 		}
 	}
-	private String serializeSingleAttributeObjectBlock(SingleAttributeObjectBlock block) {
-		String ret="";
+ 
+	private void serializeSingleAttributeObjectBlock(StringBuilder input, SingleAttributeObjectBlock block) {
+		StringBuilder ret=input;
 		for(AttributeValue value : block.getAttributeValues()) {
-			ret+=this.serializeAttributeValue(value);
+			this.serializeAttributeValue(ret,value);
 		}
-		return ret;
 	}
 	public String serialize(SimpleValue value) {
-		return this.serializeSimpleValue(value);
+		StringBuilder ret=new StringBuilder();
+		this.serializeSimpleValue(ret,value);
+		return ret.toString();
+	}
+	public void serialize(StringBuilder input, SimpleValue value) {
+		this.serializeSimpleValue(input,value);
 	}
 	@Override
 	public String serializeSimpleValue(SimpleValue value) {
+		StringBuilder ret=new StringBuilder();
+		this.serializeSimpleValue(ret, value);
+		return ret.toString();
+	}
+	public void serializeSimpleValue(StringBuilder input, SimpleValue value) {
+		StringBuilder ret=input;
 		if(value.getValue() instanceof String) {
-			return "\""+value.getValue().toString()+"\"";
+			ret.append("\"");
+			ret.append(value.getValue().toString());
+			ret.append("\"");
 		} else if(value.getValue() instanceof Double) {
 			DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.ENGLISH);
 			otherSymbols.setDecimalSeparator('.');
 			DecimalFormat df = new DecimalFormat("##.#######",otherSymbols);
 			df.setMinimumFractionDigits(1);
-			String ret=df.format((Double)value.getValue());
-			return ret;
-		} else return value.getValue().toString();
+			ret.append(df.format((Double)value.getValue()));
+		} else ret.append(value.getValue().toString());
 	}
 	private String serializeSimpleIntervalValue(Interval<Comparable> interval) {
 		return interval.toString();
 	}
-	private String serializePrimitiveObjectBlock(PrimitiveObjectBlock block) {
-		String ret="";
-		if(block==null) return ret;
+	private void serializePrimitiveObjectBlock(StringBuilder input, PrimitiveObjectBlock block) {
+		StringBuilder ret=input;
+		if(block==null) return;
 		if(block.getSimpleIntervalValue()!=null) {
-			ret+=this.serializeSimpleIntervalValue(block.getSimpleIntervalValue());
+			ret.append(this.serializeSimpleIntervalValue(block.getSimpleIntervalValue()));
 		} else if(block.getSimpleListValue()!=null) {
 			for(SimpleValue value: block.getSimpleListValue()) {
-				ret+=this.serializeSimpleValue(value);
+				this.serializeSimpleValue(ret,value);
 			}
 		} else if(block.getSimpleValue()!=null) {
-			ret+=this.serializeSimpleValue(block.getSimpleValue());
+			this.serializeSimpleValue(ret,block.getSimpleValue());
 		} else if(block.getTermCode()!=null) {
-			ret+=block.getTermCode();
+			ret.append(block.getTermCode());
 		} else if(block.getTermCodeListValue()!=null) {
 			for(String term : block.getTermCodeListValue()) {
-				ret+=term;
+				ret.append(term);
 			}
 		}
-		return ret;
 	}
-	private String serializeKeyedObject(KeyedObject obj) {
-		String ret="";
-		ret+="["+this.serializeSimpleValue(obj.getKey())+"]=<"+this.serializeObjectBlock(obj.getObject())+">";
-		return ret;
+	private void serializeKeyedObject(StringBuilder input,KeyedObject obj) {
+		StringBuilder ret=input;
+		ret.append("[");
+		this.serializeSimpleValue(ret,obj.getKey());
+		ret.append("]=<");
+		this.serializeObjectBlock(ret,obj.getObject());
+		ret.append(">");
 	}
-	private String serializeMultipleAttributeObjectBlock(MultipleAttributeObjectBlock block) {
-		String ret="";
+	private void serializeMultipleAttributeObjectBlock(StringBuilder input, MultipleAttributeObjectBlock block) {
+		StringBuilder ret=input;
 		for(KeyedObject obj : block.getKeyObjects()) {
 			if(obj!=null) {
-				ret+=this.serializeKeyedObject(obj);				
+				this.serializeKeyedObject(ret,obj);				
 			} else {
 				log.warn("Warning: empty entry in keyed object list");
 			}
 		}
-		return ret;
 	}
-	private String serializeComplexObjectBlock(ComplexObjectBlock block) {
-		String ret="";
+	private void serializeComplexObjectBlock(StringBuilder input, ComplexObjectBlock block) {
+		StringBuilder ret=input;
 		if(block instanceof MultipleAttributeObjectBlock) {
-			ret+=this.serializeMultipleAttributeObjectBlock((MultipleAttributeObjectBlock)block);
+			this.serializeMultipleAttributeObjectBlock(ret,(MultipleAttributeObjectBlock)block);
 		} else {
-			ret+=this.serializeSingleAttributeObjectBlock((SingleAttributeObjectBlock)block);
+			this.serializeSingleAttributeObjectBlock(ret,(SingleAttributeObjectBlock)block);
 		}
-		return ret;
 	}
-	private String serializeObjectBlock(ObjectBlock block) {
-		String ret="";
+	private void serializeObjectBlock(StringBuilder input, ObjectBlock block) {
+		StringBuilder ret=input;
 		if(block instanceof ComplexObjectBlock) {
-			ret+=this.serializeComplexObjectBlock((ComplexObjectBlock)block);
+			this.serializeComplexObjectBlock(ret,(ComplexObjectBlock)block);
 		} else {
-			ret+=this.serializePrimitiveObjectBlock((PrimitiveObjectBlock)block);
+			this.serializePrimitiveObjectBlock(ret,(PrimitiveObjectBlock)block);
 		}
-		return ret;
 		
 	}
-	private String serializeAttributeValue(AttributeValue value) {
-		String ret="";
-		ret+=value.getId()+" = <"+this.serializeObjectBlock(value.getValue())+">";
-		return ret;
-
+	private void serializeAttributeValue(StringBuilder input, AttributeValue value) {
+		StringBuilder ret=input;
+		ret.append(value.getId());
+		ret.append(" = <");
+		this.serializeObjectBlock(ret,value.getValue());
+		ret.append(">");
 	}
 
 	public Class<?> getRootClass(ContentObject obj) {
@@ -127,17 +139,19 @@ public class OpenEHRDADLManager implements DADLManager {
 	}
 	@Override
 	public String serialize(ContentObject obj, boolean packed) {
-		String ret="";
+		StringBuilder ret=new StringBuilder("");
 		if(obj.getAttributeValues()!=null) {
 			List<AttributeValue> values=obj.getAttributeValues();
 			for(AttributeValue value : values) {
-				ret+=this.serializeAttributeValue(value);
+				this.serializeAttributeValue(ret,value);
 			}
 		} else {
-			ret+="<"+this.serializeComplexObjectBlock(obj.getComplexObjectBlock())+">";
+			ret.append("<");
+			this.serializeComplexObjectBlock(ret,obj.getComplexObjectBlock());
+			ret.append(">");
 		}
 		//Indent
-		if(packed) return ret;
+		if(packed) return ret.toString();
 		int tabCount=0;
 		StringBuilder builder=new StringBuilder(ret);
 		for(int i=0;i<builder.length();i++) {
@@ -163,6 +177,8 @@ public class OpenEHRDADLManager implements DADLManager {
 	}
 	@Override
 	public String serialize(SingleAttributeObjectBlock obj) {
-		return this.serializeSingleAttributeObjectBlock(obj);
+		StringBuilder ret=new StringBuilder();
+		 this.serializeSingleAttributeObjectBlock(ret,obj);
+		 return ret.toString();
 	}
 }

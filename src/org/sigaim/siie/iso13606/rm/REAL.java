@@ -91,7 +91,7 @@ public class REAL
      *     {@link Integer }
      *     
      */
-    public void setPrecision(Integer value) {
+    public void setPrecision(int value) {
         this.precision = value;
     }
 
