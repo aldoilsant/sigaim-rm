@@ -6,6 +6,7 @@ import java.util.List;
 import org.sigaim.siie.seql.model.SEQLException;
 
 public class SEQLQuery {
+	private boolean merged;
 	private List<SEQLSelectCondition> selectConditions;
 	private SEQLFromCondition fromCondition;
 	private SEQLWhereCondition whereCondition;
@@ -14,6 +15,7 @@ public class SEQLQuery {
 		selectConditions=new ArrayList<SEQLSelectCondition>();
 		fromCondition=new SEQLFromCondition();
 		whereCondition=new SEQLWhereCondition();
+		merged=false;
 	}
 	public void addSelectCondition(String path, String name, Boolean withDescendants) {
 		selectConditions.add(new SEQLSelectCondition(path,name,withDescendants));
@@ -50,5 +52,11 @@ public class SEQLQuery {
 		}
 		selectVariables.addAll(fromVariables);
 		return selectVariables;
+	}
+	public boolean isMerged() {
+		return merged;
+	}
+	public void setMerged(boolean merged) {
+		this.merged = merged;
 	}
 }

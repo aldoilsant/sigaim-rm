@@ -62,4 +62,22 @@ public class Utils {
 	        list.add(null);
 	    }
 	}
+	public static String longestCommonPrefix(String s, String s2) {
+        String small,large;
+         if(s.length() > s2.length()) 
+            {small = s2;large = s;}
+          else
+            {small = s;large = s2;}
+        int index = 0;    
+        for(char c: large.toCharArray())
+        {
+            if(index==small.length()) break;
+            if(c != small.charAt(index)) break;
+            index++;
+        }
+        if(index==0)
+        	return "";
+        else
+          return large.substring(0,index);
+	}
 }
