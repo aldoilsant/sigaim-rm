@@ -10,11 +10,15 @@ public class SEQLQuery {
 	private List<SEQLSelectCondition> selectConditions;
 	private SEQLFromCondition fromCondition;
 	private SEQLWhereCondition whereCondition;
+	private SEQLHavingCondition havingCondition;
+	private String mergedVariable;
 	
+
 	public SEQLQuery() {
 		selectConditions=new ArrayList<SEQLSelectCondition>();
 		fromCondition=new SEQLFromCondition();
 		whereCondition=new SEQLWhereCondition();
+		havingCondition= new SEQLHavingCondition();
 		merged=false;
 	}
 	public void addSelectCondition(String path, String name, Boolean withDescendants) {
@@ -58,5 +62,14 @@ public class SEQLQuery {
 	}
 	public void setMerged(boolean merged) {
 		this.merged = merged;
+	}
+	public String getMergedVariable() {
+		return mergedVariable;
+	}
+	public void setMergedVariable(String mergedVariable) {
+		this.mergedVariable = mergedVariable;
+	}
+	public SEQLHavingCondition getHavingCondition() {
+		return havingCondition;
 	}
 }

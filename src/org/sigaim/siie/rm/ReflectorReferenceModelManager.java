@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,12 +114,12 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		objects.add(org.sigaim.siie.iso13606.rm.Item.class);
 		objects.add(org.sigaim.siie.iso13606.rm.Cluster.class);
 		objects.add(org.sigaim.siie.iso13606.rm.Element.class);
-		objects.add(org.sigaim.siie.iso13606.rm.ExtractCriteria.class);
-		objects.add(org.sigaim.siie.iso13606.rm.AuditInfo.class);
-		objects.add(org.sigaim.siie.iso13606.rm.AttestationInfo.class);
-		objects.add(org.sigaim.siie.iso13606.rm.FunctionalRole.class);
-		objects.add(org.sigaim.siie.iso13606.rm.RelatedParty.class);
-		objects.add(org.sigaim.siie.iso13606.rm.Link.class);
+		//objects.add(org.sigaim.siie.iso13606.rm.ExtractCriteria.class);
+		//objects.add(org.sigaim.siie.iso13606.rm.AuditInfo.class);
+		//objects.add(org.sigaim.siie.iso13606.rm.AttestationInfo.class);
+		//objects.add(org.sigaim.siie.iso13606.rm.FunctionalRole.class);
+		//objects.add(org.sigaim.siie.iso13606.rm.RelatedParty.class);
+		//objects.add(org.sigaim.siie.iso13606.rm.Link.class);
 		objects.add(org.sigaim.siie.iso13606.rm.HealthcareFacility.class);
 		objects.add(org.sigaim.siie.iso13606.rm.Performer.class);
 		objects.add(org.sigaim.siie.iso13606.rm.SubjectOfCare.class);
@@ -754,6 +755,8 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 			return new StringValue(obj.toString());
 		} else if(obj instanceof Enum) {
 			return new StringValue(""+((Enum)obj));
+		} else if(obj instanceof BigInteger) {
+			return new StringValue(obj.toString());
 		} else {
 			throw new ReferenceModelException("Cannot serialize object of class "+obj.getClass().getName()+": not implemented");
 		}
@@ -958,4 +961,83 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 	public boolean isArchetypedClass(Class<?> tclass) {
 		return org.sigaim.siie.iso13606.rm.RecordComponent.class.isAssignableFrom(tclass);
 	}
+	private String serializePrimitiveTypeless(PrimitiveObjectBlock pblock) {
+		StringBuilder value=new StringBuilder();
+		this.dadlManager.serializePrimitiveObjectBlock(value,pblock);
+		if(value.charAt(0)=='"') {
+			value.deleteCharAt(0);
+			value.deleteCharAt(value.length()-1);
+		}
+		return value.toString();
+	}
+	private String serializeSimpleValueTypeless(SimpleValue pblock) {
+		StringBuilder value= new StringBuilder( this.dadlManager.serializeSimpleValue(pblock));
+		if(value.charAt(0)=='"') {
+			value.deleteCharAt(0);
+			value.deleteCharAt(value.length()-1);
+		}
+		return value.toString();
+	}
+	public void createPathMapForObjectBlock(ObjectBlock block, boolean useArchetypeNodes, StringBuilder parentPath, Map<String,String> pathMap, String index) throws ReferenceModelException {
+		if(block instanceof ComplexObjectBlock) {
+			if(block instanceof SingleAttributeObjectBlock) {
+				StringBuilder branch;
+				SingleAttributeObjectBlock sblock=(SingleAttributeObjectBlock)block;
+				if(parentPath==null) {
+					branch= new StringBuilder("");
+				} else {
+					branch=new StringBuilder(parentPath);
+					//This is an all-new object. Append the object attribute node if relevant
+					if(useArchetypeNodes) {
+						String nodeId=this.getArchetypeNodeIdForRMObject(sblock);
+						if(nodeId!=null) {
+							branch.append("[");
+							branch.append(nodeId);
+							branch.append("]");
+						}
+					}
+					if(index!=null) {
+						branch.append("[");
+						branch.append(index);
+						branch.append("]");
+					}
+				}
+				for(AttributeValue value : sblock.getAttributeValues()) {
+					StringBuilder childBranch=new StringBuilder(branch);
+					childBranch.append("/");
+					childBranch.append(value.getId());
+					this.createPathMapForObjectBlock(value.getValue(), useArchetypeNodes, childBranch, pathMap,null);
+				}
+			} else {
+				//MultipleAttributeObjectBlock, collection
+				MultipleAttributeObjectBlock mblock=(MultipleAttributeObjectBlock)block;
+				for(KeyedObject obj : mblock.getKeyObjects()) {
+					StringBuilder childBranch=new StringBuilder(parentPath);
+					this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes, childBranch, pathMap,this.serializeSimpleValueTypeless(obj.getKey()));
+				}
+			}
+		} else { //This is a "basic value". Use the current path and add it to the pathmap
+			//Note this is the only step where the pathMap is updated
+
+			pathMap.put(parentPath.toString(), this.serializePrimitiveTypeless((PrimitiveObjectBlock)block));
+		}
+	}
+	@Override
+	public Map<String, String> createPathMap(ContentObject obj,
+			boolean useArchetypeNodes) throws SemanticDADLException, ReferenceModelException {
+		if(obj.getComplexObjectBlock()==null) {
+			throw new SemanticDADLException("ContentObject must start with a single object to create a path map");
+		} else {
+			ComplexObjectBlock block=obj.getComplexObjectBlock();
+			if(!(block instanceof SingleAttributeObjectBlock)) {
+				throw new SemanticDADLException("ContentObject must start with a single object to create a path map");
+			} else {
+				SingleAttributeObjectBlock sblock=(SingleAttributeObjectBlock) block;
+				HashMap<String,String> pathMap=new HashMap<String,String>();
+				this.createPathMapForObjectBlock(sblock, useArchetypeNodes,null,pathMap,null);
+				return pathMap;
+			}
+		}
+	}
+	
 }

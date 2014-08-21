@@ -3,8 +3,10 @@ package org.sigaim.siie.dadl;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.openehr.am.parser.AttributeValue;
@@ -19,6 +21,8 @@ import org.openehr.am.parser.SimpleValue;
 import org.openehr.am.parser.SingleAttributeObjectBlock;
 import org.openehr.rm.support.basic.Interval;
 import org.sigaim.siie.annotations.DADL;
+import org.sigaim.siie.dadl.exceptions.SemanticDADLException;
+import org.sigaim.siie.seql.model.SEQLPath;
 
 public class OpenEHRDADLManager implements DADLManager {
 	  private static org.apache.log4j.Logger log = Logger
@@ -72,7 +76,8 @@ public class OpenEHRDADLManager implements DADLManager {
 	private String serializeSimpleIntervalValue(Interval<Comparable> interval) {
 		return interval.toString();
 	}
-	private void serializePrimitiveObjectBlock(StringBuilder input, PrimitiveObjectBlock block) {
+	@Override
+	public void serializePrimitiveObjectBlock(StringBuilder input, PrimitiveObjectBlock block) {
 		StringBuilder ret=input;
 		if(block==null) return;
 		if(block.getSimpleIntervalValue()!=null) {
@@ -124,7 +129,6 @@ public class OpenEHRDADLManager implements DADLManager {
 		} else {
 			this.serializePrimitiveObjectBlock(ret,(PrimitiveObjectBlock)block);
 		}
-		
 	}
 	private void serializeAttributeValue(StringBuilder input, AttributeValue value) {
 		StringBuilder ret=input;
@@ -181,4 +185,6 @@ public class OpenEHRDADLManager implements DADLManager {
 		 this.serializeSingleAttributeObjectBlock(ret,obj);
 		 return ret.toString();
 	}
+	
+
 }
