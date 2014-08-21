@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -978,7 +980,14 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		}
 		return value.toString();
 	}
-	public void createPathMapForObjectBlock(ObjectBlock block, boolean useArchetypeNodes, StringBuilder parentPath, Map<String,String> pathMap, String index) throws ReferenceModelException {
+	public void createPathMapForObjectBlock(ObjectBlock block, boolean useArchetypeNodes, boolean useImplicitIndexes, StringBuilder parentPath, Map<String,String> pathMap, String index, List<String> exclusions) throws ReferenceModelException {
+		if(exclusions !=null && parentPath!=null) {
+			for(String exclusion : exclusions) {
+				if(parentPath.toString().endsWith(exclusion)) {
+					return;
+				}
+			}
+		}
 		if(block instanceof ComplexObjectBlock) {
 			if(block instanceof SingleAttributeObjectBlock) {
 				StringBuilder branch;
@@ -1002,18 +1011,44 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 						branch.append("]");
 					}
 				}
-				for(AttributeValue value : sblock.getAttributeValues()) {
+ 				for(AttributeValue value : sblock.getAttributeValues()) {
 					StringBuilder childBranch=new StringBuilder(branch);
 					childBranch.append("/");
 					childBranch.append(value.getId());
-					this.createPathMapForObjectBlock(value.getValue(), useArchetypeNodes, childBranch, pathMap,null);
+					this.createPathMapForObjectBlock(value.getValue(), useArchetypeNodes, useImplicitIndexes, childBranch, pathMap,null, exclusions);
 				}
 			} else {
 				//MultipleAttributeObjectBlock, collection
 				MultipleAttributeObjectBlock mblock=(MultipleAttributeObjectBlock)block;
-				for(KeyedObject obj : mblock.getKeyObjects()) {
-					StringBuilder childBranch=new StringBuilder(parentPath);
-					this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes, childBranch, pathMap,this.serializeSimpleValueTypeless(obj.getKey()));
+				boolean identifiedByNodeId=false;
+				if(useImplicitIndexes) {
+					Set<String> nodeIdSet=new HashSet<String>();
+					int notNullObjectCount=0;
+					for(KeyedObject obj : mblock.getKeyObjects()) {
+						if(obj!=null && obj.getObject() instanceof SingleAttributeObjectBlock) {
+							SingleAttributeObjectBlock sblock=(SingleAttributeObjectBlock)obj.getObject();
+							String nid=this.getArchetypeNodeIdForRMObject(sblock);
+							notNullObjectCount++;
+							nodeIdSet.add(nid);
+						} else if(obj!=null) {
+							identifiedByNodeId=false;
+							break;
+						}
+					}
+					if(nodeIdSet.size()==notNullObjectCount) {
+						identifiedByNodeId=true;
+					}
+				}
+				if((mblock.getKeyObjects().size()>1 && !identifiedByNodeId) || !useImplicitIndexes) {
+					for(KeyedObject obj : mblock.getKeyObjects()) {
+						StringBuilder childBranch=new StringBuilder(parentPath);
+						this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes,  useImplicitIndexes,  childBranch, pathMap,this.serializeSimpleValueTypeless(obj.getKey()),exclusions);
+					}
+				} else if(mblock.getKeyObjects().size()>=1){
+					for(KeyedObject obj : mblock.getKeyObjects()) {
+						StringBuilder childBranch=new StringBuilder(parentPath);
+						this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes,  useImplicitIndexes,  childBranch, pathMap,null,exclusions);
+					}
 				}
 			}
 		} else { //This is a "basic value". Use the current path and add it to the pathmap
@@ -1024,7 +1059,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 	}
 	@Override
 	public Map<String, String> createPathMap(ContentObject obj,
-			boolean useArchetypeNodes) throws SemanticDADLException, ReferenceModelException {
+			boolean useArchetypeNodes, boolean useImplicitIndexes,List<String> exclusions) throws SemanticDADLException, ReferenceModelException {
 		if(obj.getComplexObjectBlock()==null) {
 			throw new SemanticDADLException("ContentObject must start with a single object to create a path map");
 		} else {
@@ -1034,7 +1069,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 			} else {
 				SingleAttributeObjectBlock sblock=(SingleAttributeObjectBlock) block;
 				HashMap<String,String> pathMap=new HashMap<String,String>();
-				this.createPathMapForObjectBlock(sblock, useArchetypeNodes,null,pathMap,null);
+				this.createPathMapForObjectBlock(sblock, useArchetypeNodes,useImplicitIndexes,null,pathMap,null,exclusions);
 				return pathMap;
 			}
 		}

@@ -31,5 +31,5 @@ public interface ReferenceModelManager {
 	public List<Class<?>> getSubclassesOrSelf(Class<?> base);
 	public Object bindSingleAttributeObjectBlock(SingleAttributeObjectBlock block)  throws SemanticDADLException, ReferenceModelException;
 	Map<String, String> createPathMap(ContentObject obj,
-				boolean useArchetypeNodes) throws SemanticDADLException, ReferenceModelException;
+				boolean useArchetypeNodes, boolean useImplicitIndexes, List<String> exclusions) throws SemanticDADLException, ReferenceModelException;
 }
