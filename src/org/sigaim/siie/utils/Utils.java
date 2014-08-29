@@ -3,6 +3,7 @@ package org.sigaim.siie.utils;
 import java.util.ArrayList;
 
 public class Utils {
+	//Class comparison for different conventions
 	public static Boolean classNameEquals(String className1, String className2) {
 		return Utils.toUppercaseNotation(className1).toLowerCase().equals(Utils.toUppercaseNotation(className2).toLowerCase());
 	}
