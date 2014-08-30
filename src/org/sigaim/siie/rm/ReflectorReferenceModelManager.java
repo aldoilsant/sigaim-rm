@@ -367,7 +367,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		try {
 			classesForString=ReflectorReferenceModelManager.getAllReferenceModelClasses();
 			rmObjects=ReflectorReferenceModelManager.getRMObjectClasses();
-			log.info("Loaded "+classesForString.size()+" reference model classes");
+			//log.info("Loaded "+classesForString.size()+" reference model classes");
 		} catch(Exception e){
 			e.printStackTrace();
 		}
