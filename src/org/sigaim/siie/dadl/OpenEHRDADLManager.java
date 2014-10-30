@@ -142,8 +142,7 @@ public class OpenEHRDADLManager implements DADLManager {
 		return null;
 	}
 	@Override
-	public String serialize(ContentObject obj, boolean packed) {
-		StringBuilder ret=new StringBuilder("");
+	public void serialize(ContentObject obj, boolean packed, StringBuilder ret) {
 		if(obj.getAttributeValues()!=null) {
 			List<AttributeValue> values=obj.getAttributeValues();
 			for(AttributeValue value : values) {
@@ -155,9 +154,9 @@ public class OpenEHRDADLManager implements DADLManager {
 			ret.append(">");
 		}
 		//Indent
-		if(packed) return ret.toString();
+		if(packed) return;
 		int tabCount=0;
-		StringBuilder builder=new StringBuilder(ret);
+		StringBuilder builder=ret;
 		for(int i=0;i<builder.length();i++) {
 			if(builder.charAt(i)=='<') {
 				tabCount++;
@@ -177,7 +176,12 @@ public class OpenEHRDADLManager implements DADLManager {
 				}
 			}
 		}
-		return builder.toString();
+	}
+	@Override
+	public String serialize(ContentObject obj, boolean packed) {
+		StringBuilder ret=new StringBuilder("");
+		serialize(obj,packed,ret);
+		return ret.toString();
 	}
 	@Override
 	public String serialize(SingleAttributeObjectBlock obj) {

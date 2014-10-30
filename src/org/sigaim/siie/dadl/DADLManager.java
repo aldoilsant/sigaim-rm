@@ -14,6 +14,7 @@ public interface DADLManager {
 
 	ContentObject parseDADL(InputStream dadlSource);
 	String serialize(ContentObject obj, boolean packed);
+	void serialize(ContentObject obj, boolean packed, StringBuilder out);
 	String serialize(SingleAttributeObjectBlock obj);
 	String serialize(SimpleValue obj);
 	String serializeSimpleValue(SimpleValue value);
