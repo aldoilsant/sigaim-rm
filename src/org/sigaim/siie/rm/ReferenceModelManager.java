@@ -15,10 +15,13 @@ import org.sigaim.siie.seql.model.SEQLPathComponent;
 public interface ReferenceModelManager {
 	Class<?> referenceModelClassFromString(String sclass);
 	Class<?> getPathType(String sreferenceModelClass, SEQLPath path);
+	Class<?> getPathType(Class<?> referenceModelClass, SEQLPath path,boolean identified);
+	Class<?> getPathType(Class<?> referenceModelClass, SEQLPath path);
 	Object bind(ContentObject obj) throws SemanticDADLException, ReferenceModelException;
 	ContentObject unbind(Object root) throws ReferenceModelException;
 	Map<SEQLPathComponent,SingleAttributeObjectBlock>  splitForRMObjectVsDataObject(SingleAttributeObjectBlock block) throws SemanticDADLException, ReferenceModelException;
 	String getReferenceModelClassName(SingleAttributeObjectBlock block) throws SemanticDADLException;
+	String getReferenceModelClassName(Class<?> referenceModelClass);
 	ObjectBlock solveReferenceModelPath(SingleAttributeObjectBlock block, List<SEQLPathComponent> components) throws ReferenceModelException;
 	String getArchetypeIdForRMObject(SingleAttributeObjectBlock block)  throws ReferenceModelException;
 	String getArchetypeNodeIdForRMObject(SingleAttributeObjectBlock block)  throws ReferenceModelException;

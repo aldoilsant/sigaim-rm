@@ -485,23 +485,22 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		}
 		return null;
 	}
-	
-	public Class<?> getPathType(String sreferenceModelClass, SEQLPath path) {
-		Class<?> referenceModelClass=null;
+	public Class<?> getPathType(Class<?> referenceModelClass, SEQLPath path) {
+		return this.getPathType(referenceModelClass, path,true);
+	}
+	public Class<?> getPathType(Class<?> referenceModelClass, SEQLPath path, boolean identified) {
 		boolean isAbsolute=false;
-		if(sreferenceModelClass==null) {
+		if(referenceModelClass==null) {
 			referenceModelClass=root;
 			isAbsolute=true;
-		} else {
-			referenceModelClass=this.referenceModelClassFromString(Utils.toUppercaseNotation(sreferenceModelClass));
 		}
 		List<SEQLPathComponent> components=path.getPathComponents();
 		if(components==null || components.size()==0) {
-			return this.referenceModelClassFromString(sreferenceModelClass);
+			return referenceModelClass;
 		}
 		path=path.toUppercaseNotation();
 		components=path.getPathComponents();
-		if(!isAbsolute) { //remove identifiedVariable
+		if(!isAbsolute && identified) { //remove identifiedVariable
 			components.remove(0);
 		}
 		List<Class<?>> subclasses=this.getSubclassesOrSelf(referenceModelClass);
@@ -510,6 +509,16 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 			if(ret!=null) return ret;
 		}
 		return null;
+	}
+	public Class<?> getPathType(String sreferenceModelClass, SEQLPath path) {
+		Class<?> referenceModelClass=null;
+		boolean isAbsolute=false;
+		if(sreferenceModelClass==null) {
+			return this.getPathType(root, path);
+		} else {
+			referenceModelClass=this.referenceModelClassFromString(Utils.toUppercaseNotation(sreferenceModelClass));
+			return this.getPathType(referenceModelClass, path);
+		}
 	}
 	private Object bindMultipleAttributeObjectBlock(MultipleAttributeObjectBlock block) throws SemanticDADLException, ReferenceModelException {
 		if(block.getKeyObjects().size()==0) return null;
@@ -1073,6 +1082,8 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 				return pathMap;
 			}
 		}
+	}	
+	public String getReferenceModelClassName(Class<?> referenceModelClass) {
+		return referenceModelClass.getSimpleName().toLowerCase();
 	}
-	
 }
