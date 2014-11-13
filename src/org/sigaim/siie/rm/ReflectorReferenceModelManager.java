@@ -399,6 +399,8 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 	@Override
 	public List<Class<?>> getSubclassesOrSelf(Class<?> base) {
 		ArrayList<Class<?>> ret=new ArrayList<Class<?>>();
+		//CRITICAL: make the base class first in the return array
+		//or else solving path types WILL SOMETIMES GIVE WRONG RESULTS!!!
 		ret.add(base);
 		for(Class<?> rmClass : classesForString.values()) {
 			if(base.isAssignableFrom(rmClass) && !base.equals(rmClass)) {
