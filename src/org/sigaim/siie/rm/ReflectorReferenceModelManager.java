@@ -399,8 +399,9 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 	@Override
 	public List<Class<?>> getSubclassesOrSelf(Class<?> base) {
 		ArrayList<Class<?>> ret=new ArrayList<Class<?>>();
+		ret.add(base);
 		for(Class<?> rmClass : classesForString.values()) {
-			if(base.isAssignableFrom(rmClass)) {
+			if(base.isAssignableFrom(rmClass) && !base.equals(rmClass)) {
 				ret.add(rmClass);
 			}
 		}
@@ -591,7 +592,10 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		String referenceModelClassName=null;
 		try {
 			referenceModelClassName=this.getReferenceModelClassName(block);
-		} catch(Exception e) {}
+		} catch(Exception e) {
+			e.printStackTrace();
+			
+		}
 		if(referenceModelClassName==null) {
 			return null;
 			//throw new SemanticDADLException("Object blocks must have the mandatory field referenceModelClassName");
