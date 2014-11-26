@@ -208,13 +208,11 @@ public class EHRExtract {
     }
 
     /**
-     * Gets the value of the timeCreated property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link XMLGregorianCalendar }
-     *     
-     */
+	 * Gets the value of the timeCreated property.
+	 * 
+	 * @return possible object is {@link XMLGregorianCalendar }
+	 * 
+	 */
     public XMLGregorianCalendar getTimeCreated() {
         return timeCreated;
     }

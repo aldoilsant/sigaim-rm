@@ -978,14 +978,8 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 	public boolean isArchetypedClass(Class<?> tclass) {
 		return org.sigaim.siie.iso13606.rm.RecordComponent.class.isAssignableFrom(tclass);
 	}
-	private String serializePrimitiveTypeless(PrimitiveObjectBlock pblock) {
-		StringBuilder value=new StringBuilder();
-		this.dadlManager.serializePrimitiveObjectBlock(value,pblock);
-		if(value.charAt(0)=='"') {
-			value.deleteCharAt(0);
-			value.deleteCharAt(value.length()-1);
-		}
-		return value.toString();
+	private Object serializePrimitiveTypeless(PrimitiveObjectBlock pblock) {
+		return pblock.getSimpleValue().getValue();
 	}
 	private String serializeSimpleValueTypeless(SimpleValue pblock) {
 		StringBuilder value= new StringBuilder( this.dadlManager.serializeSimpleValue(pblock));
@@ -995,7 +989,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		}
 		return value.toString();
 	}
-	public void createPathMapForObjectBlock(ObjectBlock block, boolean useArchetypeNodes, boolean useImplicitIndexes, StringBuilder parentPath, Map<String,String> pathMap, String index, List<String> exclusions) throws ReferenceModelException {
+	public void createPathMapForObjectBlock(ObjectBlock block, boolean useArchetypeNodes, boolean useImplicitIndexes, StringBuilder parentPath, Map<String,Object> pathMap, String index, List<String> exclusions) throws ReferenceModelException {
 		if(exclusions !=null && parentPath!=null) {
 			for(String exclusion : exclusions) {
 				if(parentPath.toString().endsWith(exclusion)) {
@@ -1073,7 +1067,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		}
 	}
 	@Override
-	public Map<String, String> createPathMap(ContentObject obj,
+	public Map<String, Object> createPathMap(ContentObject obj,
 			boolean useArchetypeNodes, boolean useImplicitIndexes,List<String> exclusions) throws SemanticDADLException, ReferenceModelException {
 		if(obj.getComplexObjectBlock()==null) {
 			throw new SemanticDADLException("ContentObject must start with a single object to create a path map");
@@ -1083,7 +1077,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 				throw new SemanticDADLException("ContentObject must start with a single object to create a path map");
 			} else {
 				SingleAttributeObjectBlock sblock=(SingleAttributeObjectBlock) block;
-				HashMap<String,String> pathMap=new HashMap<String,String>();
+				HashMap<String,Object> pathMap=new HashMap<String,Object>();
 				this.createPathMapForObjectBlock(sblock, useArchetypeNodes,useImplicitIndexes,null,pathMap,null,exclusions);
 				return pathMap;
 			}
