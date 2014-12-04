@@ -1,6 +1,8 @@
 package org.sigaim.siie.utils;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
 	//Class comparison for different conventions
@@ -62,6 +64,18 @@ public class Utils {
 	    while (list.size() < size) {
 	        list.add(null);
 	    }
+	}
+	public static boolean stringIsISO136065Date(String value) {
+	
+		 String pattern = "[1-2][0-9]{3,3}(((0[1-9])|(1[0-2]))((0[1-9])|([1-2][0-9]|3[0-1])(([0-1][0-9]|2[0-3])([0-5][0-9]([0-5][0-9](\\.[0-9]{1,4})?)?)?)?)?)?([+\\-](0[0-9]|1[0-3])([0-5][0-9]))?";
+
+
+	      // Create a Pattern object
+	      Pattern r = Pattern.compile(pattern);
+
+	      // Now create matcher object.
+	      Matcher m = r.matcher(value);
+	      return m.find();
 	}
 	public static String longestCommonPrefix(String s, String s2) {
         String small,large;

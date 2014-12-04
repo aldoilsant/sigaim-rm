@@ -80,7 +80,7 @@ public class ExtractCriteria {
      *     {@link Boolean }
      *     
      */
-    public Boolean isAllVersions() {
+    public boolean isAllVersions() {
         return allVersions;
     }
 
@@ -92,7 +92,7 @@ public class ExtractCriteria {
      *     {@link Boolean }
      *     
      */
-    public void setAllVersions(Boolean value) {
+    public void setAllVersions(boolean value) {
         this.allVersions = value;
     }
 
@@ -157,7 +157,7 @@ public class ExtractCriteria {
      *     {@link Boolean }
      *     
      */
-    public Boolean isMultimediaIncluded() {
+    public boolean isMultimediaIncluded() {
         return multimediaIncluded;
     }
 
@@ -169,7 +169,7 @@ public class ExtractCriteria {
      *     {@link Boolean }
      *     
      */
-    public void setMultimediaIncluded(Boolean value) {
+    public void setMultimediaIncluded(boolean value) {
         this.multimediaIncluded = value;
     }
 

@@ -9,18 +9,24 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Enumeration;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.log4j.Logger;
 import org.openehr.am.parser.AttributeValue;
 import org.openehr.am.parser.BooleanValue;
@@ -38,6 +44,8 @@ import org.openehr.am.parser.SingleAttributeObjectBlock;
 import org.openehr.am.parser.StringValue;
 import org.sigaim.siie.dadl.DADLManager;
 import org.sigaim.siie.dadl.exceptions.SemanticDADLException;
+import org.sigaim.siie.iso13606.rm.ANY;
+import org.sigaim.siie.iso13606.rm.TS;
 import org.sigaim.siie.rm.exceptions.ReferenceModelException;
 import org.sigaim.siie.seql.model.SEQLPath;
 import org.sigaim.siie.seql.model.SEQLPathComponent;
@@ -409,6 +417,30 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		}
 		return ret;
 	}
+	//Necessary when a path has a subclass, but property is in superclass 
+	//even if not assignable
+	@Override
+	public List<Class<?>> getCandidatesForPathClass(Class<?> base) {
+		ArrayList<Class<?>> ret=new ArrayList<Class<?>>();
+		ret.addAll(this.getSubclassesOrSelf(base));
+		for(Class<?> rmClass : classesForString.values()) {
+			if(rmClass.isAssignableFrom(base) && !base.equals(rmClass)) {
+				ret.add(rmClass);
+			}
+		}
+		return ret;
+	}
+	@Override
+	public List<String> getCandidatesForPathClass(String base) {
+		base=Utils.toUppercaseNotation(base);
+		List<String> ret=new ArrayList<String>();
+		Class<?> theClass=this.referenceModelClassFromString(base);
+		List<Class<?>> candiadates=this.getCandidatesForPathClass(theClass);
+		for(Class<?> candidate : candiadates) {
+			ret.add(Utils.toUppercaseNotation(candidate.getSimpleName()));
+		}
+		return ret;
+	}
 	@Override
 	public ObjectBlock solveReferenceModelPath(SingleAttributeObjectBlock block, List<SEQLPathComponent> components) throws ReferenceModelException { 
 		//Use the path components to solve the serialized value 
@@ -463,7 +495,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 				Method readMethod=descriptor.getReadMethod();
 				if(readMethod!=null) {
 					String methodName=readMethod.getName().toLowerCase();
-					if(methodName.equals("get"+attributeName)) {
+					if(methodName.equals("get"+attributeName) || methodName.equals("is"+attributeName)) {
 						Type t=readMethod.getGenericReturnType();
 						if( t instanceof ParameterizedType ) {
 					    	ParameterizedType pt=(ParameterizedType)t;
@@ -978,7 +1010,60 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 	public boolean isArchetypedClass(Class<?> tclass) {
 		return org.sigaim.siie.iso13606.rm.RecordComponent.class.isAssignableFrom(tclass);
 	}
-	private Object serializePrimitiveTypeless(PrimitiveObjectBlock pblock) {
+	private Object serializePrimitiveTypeless(PrimitiveObjectBlock pblock, String path) {
+		SEQLPath spath=new SEQLPath(path);
+		SEQLPath parentPath=spath.removeLastPathComponent();
+		if(path.endsWith("low_closed")) {
+			log.debug("Wrong case");
+		}
+		Class<?> parentType=this.getPathType((String)null, parentPath);
+		Class<?> pathType=this.getPathType((String)null, spath);
+		if(pathType==null) {
+			log.warn("Invalid path");
+		}
+		if(pathType.equals(Object.class)) {
+			log.debug("Raw object");
+		}
+		if(pathType.isEnum()) {
+			String value=(String)pblock.getSimpleValue().getValue();
+			Object ret=Enum.valueOf((Class<? extends Enum>)pathType, value);
+			return ret;
+		}
+		else if(pathType.equals(BigInteger.class)) {
+			String value=(String)pblock.getSimpleValue().getValue();
+			BigInteger ret=new BigInteger(value);
+			return ret;
+		}
+		else if(pathType.equals(XMLGregorianCalendar.class)) {
+			String value=(String)pblock.getSimpleValue().getValue();
+			XMLGregorianCalendar ret=null;
+			try {
+				ret = DatatypeFactory.newInstance().newXMLGregorianCalendar(value);
+			} catch (DatatypeConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return ret;
+
+		} else if(parentType!=null && ANY.class.isAssignableFrom(parentType)) {
+			//Brute force parsing of dates
+			Object value=pblock.getSimpleValue().getValue();
+			if(String.class.equals(value.getClass())) {
+				if(Utils.stringIsISO136065Date((String)value)) {
+					DateFormat format = new SimpleDateFormat("yyyyMMddhhmmss.SSS");
+					try {
+						Date date = format.parse((String)value);	
+						GregorianCalendar c = new GregorianCalendar();
+						c.setTime(date);
+						XMLGregorianCalendar ret = DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
+						log.debug("Actually returning date");
+						return ret;
+					} catch(Exception e) {
+						//e.printStackTrace();
+					}
+				}
+			}
+		}
 		return pblock.getSimpleValue().getValue();
 	}
 	private String serializeSimpleValueTypeless(SimpleValue pblock) {
@@ -989,10 +1074,17 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 		}
 		return value.toString();
 	}
-	public void createPathMapForObjectBlock(ObjectBlock block, boolean useArchetypeNodes, boolean useImplicitIndexes, StringBuilder parentPath, Map<String,Object> pathMap, String index, List<String> exclusions) throws ReferenceModelException {
-		if(exclusions !=null && parentPath!=null) {
-			for(String exclusion : exclusions) {
+	public void createPathMapForObjectBlock(ObjectBlock block, boolean useArchetypeNodes, boolean useImplicitIndexes, StringBuilder parentPath, Map<String,Object> pathMap, String index, List<String> startExclusions, List<String> endExclusions) throws ReferenceModelException {
+		if(endExclusions !=null && parentPath!=null) {
+			for(String exclusion : endExclusions) {
 				if(parentPath.toString().endsWith(exclusion)) {
+					return;
+				}
+			}
+		}
+		if(startExclusions !=null && parentPath!=null) {
+			for(String exclusion : startExclusions) {
+				if(parentPath.toString().startsWith(exclusion)) {
 					return;
 				}
 			}
@@ -1016,7 +1108,9 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 					}
 					if(index!=null) {
 						branch.append("[");
-						branch.append(index);
+						int iindex=Integer.parseInt(index);
+						iindex--;
+						branch.append(iindex);
 						branch.append("]");
 					}
 				}
@@ -1024,7 +1118,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 					StringBuilder childBranch=new StringBuilder(branch);
 					childBranch.append("/");
 					childBranch.append(value.getId());
-					this.createPathMapForObjectBlock(value.getValue(), useArchetypeNodes, useImplicitIndexes, childBranch, pathMap,null, exclusions);
+					this.createPathMapForObjectBlock(value.getValue(), useArchetypeNodes, useImplicitIndexes, childBranch, pathMap,null, startExclusions,endExclusions);
 				}
 			} else {
 				//MultipleAttributeObjectBlock, collection
@@ -1051,24 +1145,27 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 				if((mblock.getKeyObjects().size()>1 && !identifiedByNodeId) || !useImplicitIndexes) {
 					for(KeyedObject obj : mblock.getKeyObjects()) {
 						StringBuilder childBranch=new StringBuilder(parentPath);
-						this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes,  useImplicitIndexes,  childBranch, pathMap,this.serializeSimpleValueTypeless(obj.getKey()),exclusions);
+						this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes,  useImplicitIndexes,  childBranch, pathMap,this.serializeSimpleValueTypeless(obj.getKey()),startExclusions,endExclusions);
 					}
 				} else if(mblock.getKeyObjects().size()>=1){
 					for(KeyedObject obj : mblock.getKeyObjects()) {
 						StringBuilder childBranch=new StringBuilder(parentPath);
-						this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes,  useImplicitIndexes,  childBranch, pathMap,null,exclusions);
+						this.createPathMapForObjectBlock(obj.getObject(), useArchetypeNodes,  useImplicitIndexes,  childBranch, pathMap,null,startExclusions,endExclusions);
 					}
 				}
 			}
 		} else { //This is a "basic value". Use the current path and add it to the pathmap
 			//Note this is the only step where the pathMap is updated
-
-			pathMap.put(parentPath.toString(), this.serializePrimitiveTypeless((PrimitiveObjectBlock)block));
+			String path=parentPath.toString();
+			if(path.startsWith("/all_compositions")) {
+				path = path.replaceAll("all_compositions\\[at0000\\]", "all_compositions");
+			}
+			pathMap.put(path, this.serializePrimitiveTypeless((PrimitiveObjectBlock)block,path));
 		}
 	}
 	@Override
 	public Map<String, Object> createPathMap(ContentObject obj,
-			boolean useArchetypeNodes, boolean useImplicitIndexes,List<String> exclusions) throws SemanticDADLException, ReferenceModelException {
+			boolean useArchetypeNodes, boolean useImplicitIndexes,List<String> startExclusions,List<String> endExclusions) throws SemanticDADLException, ReferenceModelException {
 		if(obj.getComplexObjectBlock()==null) {
 			throw new SemanticDADLException("ContentObject must start with a single object to create a path map");
 		} else {
@@ -1078,7 +1175,7 @@ public class ReflectorReferenceModelManager implements ReferenceModelManager{
 			} else {
 				SingleAttributeObjectBlock sblock=(SingleAttributeObjectBlock) block;
 				HashMap<String,Object> pathMap=new HashMap<String,Object>();
-				this.createPathMapForObjectBlock(sblock, useArchetypeNodes,useImplicitIndexes,null,pathMap,null,exclusions);
+				this.createPathMapForObjectBlock(sblock, useArchetypeNodes,useImplicitIndexes,null,pathMap,null,startExclusions,endExclusions);
 				return pathMap;
 			}
 		}

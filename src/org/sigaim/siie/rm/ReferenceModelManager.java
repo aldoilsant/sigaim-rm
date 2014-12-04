@@ -32,7 +32,10 @@ public interface ReferenceModelManager {
 	ObjectBlock unbindGeneric(Object obj) throws ReferenceModelException;
 	public List<String> getSubclassesOrSelf(String base);
 	public List<Class<?>> getSubclassesOrSelf(Class<?> base);
+	public List<Class<?>> getCandidatesForPathClass(Class<?> base);
+	public List<String> getCandidatesForPathClass(String base);
+
 	public Object bindSingleAttributeObjectBlock(SingleAttributeObjectBlock block)  throws SemanticDADLException, ReferenceModelException;
 	Map<String, Object> createPathMap(ContentObject obj,
-				boolean useArchetypeNodes, boolean useImplicitIndexes, List<String> exclusions) throws SemanticDADLException, ReferenceModelException;
+				boolean useArchetypeNodes, boolean useImplicitIndexes, List<String> startExclusions, List<String> endExclusions) throws SemanticDADLException, ReferenceModelException;
 }

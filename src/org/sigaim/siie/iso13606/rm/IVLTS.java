@@ -168,7 +168,7 @@ public class IVLTS
      *     {@link Boolean }
      *     
      */
-    public Boolean isLowClosed() {
+    public boolean isLowClosed() {
         return lowClosed;
     }
 
@@ -180,7 +180,7 @@ public class IVLTS
      *     {@link Boolean }
      *     
      */
-    public void setLowClosed(Boolean value) {
+    public void setLowClosed(boolean value) {
         this.lowClosed = value;
     }
 
